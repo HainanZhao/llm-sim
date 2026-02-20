@@ -612,44 +612,47 @@ const App = () => {
               className="w-full flex-1 pt-12 min-h-0"
             />
 
-            <div className="p-4 bg-black/40 border-t border-slate-800 flex justify-between items-center gap-10 shrink-0 h-20">
+            <div className="p-4 bg-black/40 border-t border-slate-800 flex justify-between items-center gap-10 shrink-0 h-28">
               <DetailedStat
                 label="KV Memory Pairs"
                 value={`${tokenCount}`}
                 sub="Context Resident"
               />
-              <div className="flex-1 flex flex-col gap-2 min-w-[250px]">
-                <div className="flex justify-between items-end">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-bold uppercase text-slate-500">
-                      KV_Cache usage
-                    </span>
-                    <span className="text-xs font-mono font-bold text-blue-400">
-                      {memoryUsed.toFixed(3)} GB
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[8px] font-bold uppercase text-slate-500">
-                      Total VRAM load
-                    </span>
-                    <span
-                      className={`text-xs font-mono font-bold ${isOverflow ? 'text-red-500 animate-pulse' : 'text-blue-200'}`}
-                    >
-                      {totalVRAMUsed.toFixed(1)} / {VRAM_CAPACITY} GB
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={`w-full h-2 rounded-full overflow-hidden border p-0.5 flex items-center ${isOverflow ? 'bg-red-950 border-red-500' : 'bg-slate-900 border-slate-800'}`}
-                >
-                  <div
-                    className={`h-full transition-all duration-300 rounded-full ${isOverflow ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-blue-500'}`}
-                    style={{
-                      width: `${Math.min(100, (totalVRAMUsed / VRAM_CAPACITY) * 100)}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
+              <div className="flex-1 flex flex-col gap-2 min-w-[280px]">
+                 <div className="flex justify-between items-end">
+                   <div className="flex flex-col">
+                     <span className="text-[8px] font-bold uppercase text-slate-500 flex items-center gap-1">
+                       KV_Cache usage <Info size={8} className="text-slate-600" />
+                     </span>
+                     <span className="text-xs font-mono font-bold text-blue-400">
+                       {memoryUsed.toFixed(3)} GB
+                     </span>
+                   </div>
+                   <div className="flex flex-col items-end">
+                     <span className="text-[8px] font-bold uppercase text-slate-500">
+                       Total VRAM load
+                     </span>
+                     <span
+                       className={`text-xs font-mono font-bold ${isOverflow ? 'text-red-500 animate-pulse' : 'text-blue-200'}`}
+                     >
+                       {totalVRAMUsed.toFixed(1)} / {VRAM_CAPACITY} GB
+                     </span>
+                   </div>
+                 </div>
+                 <div className="text-[9px] font-mono text-slate-500 bg-slate-900/50 px-2 py-1 rounded border border-slate-800">
+                   <span className="text-slate-600">Formula:</span> {tokenCount} × 2 × {currentModel.layers} layers × {currentModel.hidden} hidden × ({precision}/8) B ÷ 1024³
+                 </div>
+                 <div
+                   className={`w-full h-2 rounded-full overflow-hidden border p-0.5 flex items-center ${isOverflow ? 'bg-red-950 border-red-500' : 'bg-slate-900 border-slate-800'}`}
+                 >
+                   <div
+                     className={`h-full transition-all duration-300 rounded-full ${isOverflow ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-blue-500'}`}
+                     style={{
+                       width: `${Math.min(100, (totalVRAMUsed / VRAM_CAPACITY) * 100)}%`,
+                     }}
+                   ></div>
+                 </div>
+               </div>
               <DetailedStat
                 label="Arithmetic"
                 value={
