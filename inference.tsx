@@ -364,13 +364,15 @@ const App = () => {
           const hasData = actualRowIdx < dataRows;
           const isLastActiveRow = active && actualRowIdx === dataRows - 1;
           
-          if (animateAll && active) {
-            const pulse = Math.sin(time * 0.01 + r * 0.5 + c * 0.3) * 0.3 + 0.7;
-            const flicker = Math.random() * 0.2 + 0.8;
+          if (hasData && active) {
+            const pulse = Math.sin(time * 0.008 + r * 0.4 + c * 0.25) * 0.35 + 0.65;
+            const flicker = Math.random() * 0.15 + 0.85;
             const intensity = pulse * flicker;
-            ctx.fillStyle = `rgba(59, 130, 246, ${intensity})`;
-          } else if (isLastActiveRow) {
-            ctx.fillStyle = '#3b82f6';
+            if (isLastActiveRow) {
+              ctx.fillStyle = `rgba(34, 197, 94, ${intensity})`;
+            } else {
+              ctx.fillStyle = `rgba(59, 130, 246, ${intensity})`;
+            }
           } else if (hasData) {
             ctx.fillStyle = `rgba(148, 163, 184, 0.6)`;
           } else {
@@ -389,7 +391,7 @@ const App = () => {
       8,
       kvCacheMatrix.current.length,
       'HBM_KV_CACHE',
-      phase === 'decode',
+      phase === 'decode' || phase === 'prefill',
       false,
     );
     drawInternalBlocks(
