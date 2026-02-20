@@ -368,11 +368,7 @@ const App = () => {
             const pulse = Math.sin(time * 0.008 + r * 0.4 + c * 0.25) * 0.35 + 0.65;
             const flicker = Math.random() * 0.15 + 0.85;
             const intensity = pulse * flicker;
-            if (isLastActiveRow) {
-              ctx.fillStyle = `rgba(34, 197, 94, ${intensity})`;
-            } else {
-              ctx.fillStyle = `rgba(59, 130, 246, ${intensity})`;
-            }
+            ctx.fillStyle = `rgba(59, 130, 246, ${intensity})`;
           } else if (hasData) {
             ctx.fillStyle = `rgba(148, 163, 184, 0.6)`;
           } else {
