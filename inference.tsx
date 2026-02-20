@@ -352,6 +352,7 @@ const App = () => {
       dataRows,
       label,
       active,
+      animateAll = false,
     ) => {
       ctx.fillStyle = '#64748b';
       ctx.font = 'bold 8px monospace';
@@ -362,7 +363,13 @@ const App = () => {
           const actualRowIdx = r + viewStart;
           const hasData = actualRowIdx < dataRows;
           const isLastActiveRow = active && actualRowIdx === dataRows - 1;
-          if (isLastActiveRow) {
+          
+          if (animateAll && active) {
+            const pulse = Math.sin(time * 0.01 + r * 0.5 + c * 0.3) * 0.3 + 0.7;
+            const flicker = Math.random() * 0.2 + 0.8;
+            const intensity = pulse * flicker;
+            ctx.fillStyle = `rgba(59, 130, 246, ${intensity})`;
+          } else if (isLastActiveRow) {
             ctx.fillStyle = '#3b82f6';
           } else if (hasData) {
             ctx.fillStyle = `rgba(148, 163, 184, 0.6)`;
@@ -383,6 +390,7 @@ const App = () => {
       kvCacheMatrix.current.length,
       'HBM_KV_CACHE',
       phase === 'decode',
+      false,
     );
     drawInternalBlocks(
       width - 165,
@@ -393,6 +401,7 @@ const App = () => {
       phase !== 'idle' && phase !== 'completed' ? 15 : 0,
       'SRAM_L1_L2',
       phase !== 'idle' && phase !== 'completed',
+      true,
     );
 
     busLinesY.forEach((y) => {
