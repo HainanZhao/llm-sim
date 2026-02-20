@@ -24,7 +24,26 @@ import {
   Clock,
 } from 'lucide-react';
 
+const GPUS = {
+  'h100': { name: 'NVIDIA H100', vram: 80, bandwidth: 3352 },
+  'h200': { name: 'NVIDIA H200', vram: 141, bandwidth: 4800 },
+  'b100': { name: 'NVIDIA B100', vram: 100, bandwidth: 4000 },
+  'b200': { name: 'NVIDIA B200', vram: 141, bandwidth: 5600 },
+  'a100-80': { name: 'NVIDIA A100 (80GB)', vram: 80, bandwidth: 2039 },
+  'a100-40': { name: 'NVIDIA A100 (40GB)', vram: 40, bandwidth: 1555 },
+  'rtx4090': { name: 'RTX 4090', vram: 24, bandwidth: 1008 },
+};
+
 const MODELS_2026 = {
+  'llama-3.3-70b': {
+    name: 'Llama 3.3 70B',
+    params: 70,
+    defaultPrec: 8,
+    layers: 80,
+    hidden: 8192,
+    heads: 64,
+    moe: false,
+  },
   'llama-4-mav': {
     name: 'Llama 4 Maverick',
     params: 400,
@@ -34,14 +53,14 @@ const MODELS_2026 = {
     heads: 64,
     moe: true,
   },
-  'gemma-3-27b': {
-    name: 'Gemma 3 (27B)',
-    params: 27,
-    defaultPrec: 16,
-    layers: 42,
-    hidden: 4096,
-    heads: 32,
-    moe: false,
+  'deepseek-v3': {
+    name: 'DeepSeek-V3 (671B)',
+    params: 671,
+    defaultPrec: 4,
+    layers: 128,
+    hidden: 7168,
+    heads: 128,
+    moe: true,
   },
   'deepseek-v3.2': {
     name: 'DeepSeek-V3.2',
@@ -51,6 +70,51 @@ const MODELS_2026 = {
     hidden: 7168,
     heads: 128,
     moe: true,
+  },
+  'qwen2.5-72b': {
+    name: 'Qwen 2.5 72B',
+    params: 72,
+    defaultPrec: 8,
+    layers: 80,
+    hidden: 8192,
+    heads: 64,
+    moe: false,
+  },
+  'qwen2.5-moe': {
+    name: 'Qwen 2.5-MoE',
+    params: 145,
+    defaultPrec: 4,
+    layers: 60,
+    hidden: 6144,
+    heads: 48,
+    moe: true,
+  },
+  'mistral-large2': {
+    name: 'Mistral Large 2 (123B)',
+    params: 123,
+    defaultPrec: 8,
+    layers: 88,
+    hidden: 12288,
+    heads: 96,
+    moe: false,
+  },
+  'phi-4': {
+    name: 'Phi-4 (14B)',
+    params: 14,
+    defaultPrec: 16,
+    layers: 40,
+    hidden: 5120,
+    heads: 40,
+    moe: false,
+  },
+  'gemma-3-27b': {
+    name: 'Gemma 3 (27B)',
+    params: 27,
+    defaultPrec: 16,
+    layers: 42,
+    hidden: 4096,
+    heads: 32,
+    moe: false,
   },
   'gpt-oss-120b': {
     name: 'GPT-OSS-120B',
@@ -65,14 +129,15 @@ const MODELS_2026 = {
 
 const App = () => {
   // --- State Management ---
-  const [modelKey, setModelKey] = useState('llama-4-mav');
+  const [modelKey, setModelKey] = useState('llama-3.3-70b');
+  const [gpuKey, setGpuKey] = useState('h100');
   const [phase, setPhase] = useState('idle'); // idle, prefill, decode, completed
   const [status, setStatus] = useState('SYSTEM_READY');
   const [tokenCount, setTokenCount] = useState(0);
   const [promptSize, setPromptSize] = useState(540);
   const [memoryUsed, setMemoryUsed] = useState(0);
   const [speed, setSpeed] = useState(1.5);
-  const [precision, setPrecision] = useState(4);
+  const [precision, setPrecision] = useState(8);
   const [log, setLog] = useState([]);
   const [generatedWords, setGeneratedWords] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -88,9 +153,10 @@ const App = () => {
   const tpsHistoryRef = useRef([]);
 
   const currentModel = MODELS_2026[modelKey];
+  const currentGpu = GPUS[gpuKey];
 
   // --- Constants ---
-  const VRAM_CAPACITY = 80;
+  const VRAM_CAPACITY = currentGpu.vram;
   const MODEL_PARAMS = currentModel.params;
   const GB_PER_TOKEN = useMemo(() => {
     return (
@@ -522,14 +588,14 @@ const App = () => {
           </div>
           <div className="min-w-0">
             <h1 className="text-sm font-black text-white uppercase italic truncate">
-              H100_HW_SIM // PIPELINE_OBSERVER
+              {currentGpu.name.toUpperCase().replace(/ /g, '_')}_SIM // PIPELINE_OBSERVER
             </h1>
             <div className="flex gap-2 items-center text-[10px] text-slate-500 uppercase font-bold tracking-widest">
               <span className="flex items-center gap-1">
                 <Layers size={10} /> {currentModel.name}
               </span>
               <span className="flex items-center gap-1 text-blue-500/80">
-                <Network size={10} /> 600GB/S
+                <Network size={10} /> {currentGpu.bandwidth} GB/S
               </span>
             </div>
           </div>
@@ -674,7 +740,24 @@ const App = () => {
               <Settings2 size={14} /> Global_Config
             </h3>
             <div className="space-y-6">
-              <ControlGroup label="Select 2026 Model">
+              <ControlGroup label="GPU / Accelerator" value={`${currentGpu.vram}GB`}>
+                <div className="relative group">
+                  <select
+                    value={gpuKey}
+                    onChange={(e) => setGpuKey(e.target.value)}
+                    disabled={phase !== 'idle' && phase !== 'completed'}
+                    className="w-full bg-[#020617] border border-slate-800 text-xs text-white py-2.5 px-3 rounded-lg appearance-none cursor-pointer hover:border-green-500 transition-colors"
+                  >
+                    {Object.entries(GPUS).map(([key, g]) => (
+                      <option key={key} value={key}>
+                        {g.name} ({g.vram}GB)
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-500 pointer-events-none" />
+                </div>
+              </ControlGroup>
+              <ControlGroup label="Model">
                 <div className="relative group">
                   <select
                     value={modelKey}
