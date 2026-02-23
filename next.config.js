@@ -4,6 +4,7 @@ const nextConfig = {
   // GitHub Pages configuration
   basePath: '/llm-sim',
   output: 'export',
+  trailingSlash: true,
   // Disable image optimization for static export
   images: {
     unoptimized: true,
