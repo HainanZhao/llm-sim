@@ -138,22 +138,22 @@ const App = () => {
   const [memoryUsed, setMemoryUsed] = useState(0);
   const [speed, setSpeed] = useState(1.5);
   const [precision, setPrecision] = useState(8);
-  const [log, setLog] = useState([]);
+  const [log, setLog] = useState<string[]>([]);
   const [generatedWords, setGeneratedWords] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [measuredTPS, setMeasuredTPS] = useState(0);
 
-  const canvasRef = useRef(null);
-  const scrollRef = useRef(null);
-  const requestRef = useRef();
-  const startTimeRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Real-time measurement refs
-  const lastTokenArrivedRef = useRef(null);
-  const tpsHistoryRef = useRef([]);
+  const lastTokenArrivedRef = useRef<number | null>(null);
+  const tpsHistoryRef = useRef<number[]>([]);
 
-  const currentModel = MODELS_2026[modelKey];
-  const currentGpu = GPUS[gpuKey];
+  const currentModel = (MODELS_2026 as any)[modelKey];
+  const currentGpu = (GPUS as any)[gpuKey];
 
   // --- Constants ---
   const VRAM_CAPACITY = currentGpu.vram;
@@ -245,7 +245,7 @@ const App = () => {
 
   const busLinesY = Array.from({ length: 8 }, (_, i) => 80 + i * 20);
 
-  const addLog = (msg) => {
+  const addLog = (msg: string) => {
     setLog((prev) => [msg, ...prev].slice(0, 10));
   };
 
