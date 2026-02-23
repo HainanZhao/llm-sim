@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import {
   Play,
   Square,
@@ -22,6 +23,7 @@ import {
   ChevronDown,
   CheckCircle2,
   Clock,
+  Brain,
 } from 'lucide-react';
 
 const GPUS = {
@@ -605,6 +607,21 @@ const App = () => {
                 <Network size={10} /> {currentGpu.bandwidth} GB/S
               </span>
             </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Link
+              href="/"
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/30 transition"
+            >
+              Inference
+            </Link>
+            <Link
+              href="/training"
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/30 transition"
+            >
+              Training
+            </Link>
           </div>
         </div>
         <div className="flex gap-8 shrink-0">
