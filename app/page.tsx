@@ -12,6 +12,7 @@ import {
   CpuIcon,
   AlertTriangle,
   Brain,
+  Bolt,
 } from 'lucide-react';
 
 const GPUS: Record<string, {name: string, vram: number}> = {
@@ -79,8 +80,13 @@ const TRAINING_MODELS: Record<string, {name: string, params: number}> = {
   'gemma-2-27b': { name: 'Gemma 2 27B', params: 27 },
 };
 
+const TAALAS_CHIPS: Record<string, {name: string, model: string, params: number, tokensPerSec: number, power: string}> = {
+  'hc1-8b': { name: 'Taalas HC1', model: 'Llama 3.1 8B', params: 8, tokensPerSec: 17000, power: '50W' },
+  'hc1-reasoning': { name: 'Taalas HC1-R', model: 'Reasoning LLM', params: 32, tokensPerSec: 8000, power: '80W' },
+};
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'inference' | 'training'>('inference');
+  const [activeTab, setActiveTab] = useState<'inference' | 'training' | 'taalas'>('inference');
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 font-sans">
@@ -96,17 +102,20 @@ export default function App() {
             </div>
           </div>
           <div className="flex gap-1 bg-[#0a0a0f] p-1 rounded-lg">
-            <button onClick={() => setActiveTab('inference')} className={`px-6 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'inference' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-              <span className="flex items-center gap-2"><Zap size={14} /> Inference</span>
+            <button onClick={() => setActiveTab('inference')} className={`px-4 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'inference' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+              <span className="flex items-center gap-2"><Zap size={14} /> GPU</span>
             </button>
-            <button onClick={() => setActiveTab('training')} className={`px-6 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'training' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-              <span className="flex items-center gap-2"><Brain size={14} /> Training</span>
+            <button onClick={() => setActiveTab('training')} className={`px-4 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'training' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+              <span className="flex items-center gap-2"><Brain size={14} /> Train</span>
+            </button>
+            <button onClick={() => setActiveTab('taalas')} className={`px-4 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'taalas' ? 'bg-green-500 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+              <span className="flex items-center gap-2"><Bolt size={14} /> Taalas</span>
             </button>
           </div>
         </div>
       </div>
       <div className="p-6">
-        {activeTab === 'inference' ? <InferenceSimulator /> : <TrainingSimulator />}
+        {activeTab === 'inference' ? <InferenceSimulator /> : activeTab === 'training' ? <TrainingSimulator /> : <TaalasSimulator />}
       </div>
     </div>
   );
@@ -117,7 +126,6 @@ function InferenceSimulator() {
   const [gpuKey, setGpuKey] = useState('h100');
   const [phase, setPhase] = useState('idle');
   const [precision, setPrecision] = useState(8);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentModel = INFERENCE_MODELS[modelKey];
   const currentGpu = GPUS[gpuKey];
@@ -129,11 +137,8 @@ function InferenceSimulator() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerY = height / 2;
+    const width = canvas.width, height = canvas.height, centerY = height / 2;
     let running = true;
-
     const draw = () => {
       if (!running) return;
       ctx.fillStyle = '#0a0a0f';
@@ -142,15 +147,10 @@ function InferenceSimulator() {
       for (let x = 0; x < width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
       for (let y = 0; y < height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
       ctx.fillStyle = phase === 'idle' ? '#6366f1' : '#10b981';
-      ctx.beginPath();
-      ctx.roundRect(width/2 - 60, centerY - 60, 120, 120, 12);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
+      ctx.beginPath(); ctx.roundRect(width/2 - 60, centerY - 60, 120, 120, 12); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('GPU', width/2, centerY - 20);
-      ctx.font = '10px sans-serif';
-      ctx.fillText(currentGpu.name, width/2, centerY + 5);
+      ctx.font = '10px sans-serif'; ctx.fillText(currentGpu.name, width/2, centerY + 5);
       ctx.fillText(`${currentGpu.vram}GB`, width/2, centerY + 20);
       requestAnimationFrame(draw);
     };
@@ -184,9 +184,6 @@ function InferenceSimulator() {
             ))}
           </div>
         </div>
-        <button onClick={() => setPhase(phase === 'idle' ? 'running' : 'idle')} className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition ${phase === 'idle' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-          {phase === 'idle' ? <><Play className="w-4 h-4 inline mr-2" /> Run Inference</> : <><Square className="w-4 h-4 inline mr-2" /> Stop</>}
-        </button>
         <div className="bg-[#12121a] rounded-xl p-4 border border-[#1f1f3a]">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-400 text-sm flex items-center gap-2"><HardDrive className="w-4 h-4" /> VRAM</span>
@@ -208,9 +205,6 @@ function TrainingSimulator() {
   const [datasetKey, setDatasetKey] = useState('pile-1tb');
   const [phase, setPhase] = useState('idle');
   const [precision, setPrecision] = useState(16);
-  const [step, setStep] = useState(0);
-  const [loss, setLoss] = useState(0);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentModel = TRAINING_MODELS[modelKey];
   const currentGpu = GPUS[gpuKey];
@@ -223,11 +217,8 @@ function TrainingSimulator() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerY = height / 2;
+    const width = canvas.width, height = canvas.height, centerY = height / 2;
     let running = true;
-
     const draw = () => {
       if (!running) return;
       ctx.fillStyle = '#0a0a0f';
@@ -236,23 +227,12 @@ function TrainingSimulator() {
       for (let x = 0; x < width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
       for (let y = 0; y < height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
       const leftX = 100, rightX = width - 100, gpuX = width / 2;
-      ctx.fillStyle = '#3b82f6';
-      ctx.beginPath(); ctx.roundRect(leftX, centerY - 40, 80, 80, 8); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('Data', leftX + 40, centerY + 5);
-      ctx.fillStyle = phase === 'idle' ? '#6366f1' : '#10b981';
-      ctx.beginPath(); ctx.roundRect(gpuX - 50, centerY - 50, 100, 100, 12); ctx.fill();
+      ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.roundRect(leftX, centerY - 40, 80, 80, 8); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Data', leftX + 40, centerY + 5);
+      ctx.fillStyle = phase === 'idle' ? '#6366f1' : '#10b981'; ctx.beginPath(); ctx.roundRect(gpuX - 50, centerY - 50, 100, 100, 12); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.fillText('GPU', gpuX, centerY - 15); ctx.font = '10px sans-serif'; ctx.fillText(currentGpu.name, gpuX, centerY + 5);
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath(); ctx.roundRect(rightX, centerY - 40, 80, 80, 8); ctx.fill();
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(rightX, centerY - 40, 80, 80, 8); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.fillText('Model', rightX + 40, centerY + 5);
-      if (phase !== 'idle') {
-        const t = (Date.now() / 1000) % 1;
-        ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
-        ctx.beginPath(); ctx.moveTo(leftX + 80, centerY); ctx.lineTo(gpuX - 50, centerY); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(gpuX + 50, centerY); ctx.lineTo(rightX, centerY); ctx.stroke();
-        ctx.setLineDash([]);
-      }
       requestAnimationFrame(draw);
     };
     draw();
@@ -291,19 +271,6 @@ function TrainingSimulator() {
             ))}
           </div>
         </div>
-        <button onClick={() => setPhase(phase === 'idle' ? 'running' : 'idle')} className={`w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition ${phase === 'idle' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-          {phase === 'idle' ? <><Play className="w-4 h-4 inline mr-2" /> Start Training</> : <><Square className="w-4 h-4 inline mr-2" /> Stop</>}
-        </button>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#12121a] rounded-xl p-4 border border-[#1f1f3a]">
-            <div className="text-gray-400 text-xs">Loss</div>
-            <div className="text-xl font-bold text-green-400">{loss.toFixed(4)}</div>
-          </div>
-          <div className="bg-[#12121a] rounded-xl p-4 border border-[#1f1f3a]">
-            <div className="text-gray-400 text-xs">Step</div>
-            <div className="text-xl font-bold">{step}</div>
-          </div>
-        </div>
         <div className="bg-[#12121a] rounded-xl p-4 border border-[#1f1f3a]">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-400 text-sm flex items-center gap-2"><HardDrive className="w-4 h-4" /> VRAM (training)</span>
@@ -313,6 +280,85 @@ function TrainingSimulator() {
             <div className={`h-full ${isOverflow ? 'bg-red-500' : 'bg-gradient-to-r from-purple-500 to-pink-500'}`} style={{ width: `${Math.min(100, (modelMemory / currentGpu.vram) * 100)}%` }} />
           </div>
           {isOverflow && <div className="mt-2 text-red-400 text-xs flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Not enough VRAM!</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TaalasSimulator() {
+  const [chipKey, setChipKey] = useState('hc1-8b');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chip = TAALAS_CHIPS[chipKey];
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const width = canvas.width, height = canvas.height, centerY = height / 2;
+    let running = true;
+    const draw = () => {
+      if (!running) return;
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = '#1a1a2e';
+      for (let x = 0; x < width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      for (let y = 0; y < height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      // Taalas chip - green glowing box
+      ctx.fillStyle = '#10b981';
+      ctx.shadowColor = '#10b981';
+      ctx.shadowBlur = 30;
+      ctx.beginPath(); ctx.roundRect(width/2 - 80, centerY - 80, 160, 160, 16); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('TAALAS', width/2, centerY - 30);
+      ctx.font = '14px sans-serif'; ctx.fillText(chip.name, width/2, centerY + 5);
+      ctx.font = '12px sans-serif'; ctx.fillText(chip.model, width/2, centerY + 25);
+      // Speed indicator
+      ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(`${chip.tokensPerSec.toLocaleString()}`, width/2, centerY + 60);
+      ctx.font = '10px sans-serif'; ctx.fillText('tokens/sec', width/2, centerY + 75);
+      requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { running = false; };
+  }, [chip]);
+
+  return (
+    <div className="grid grid-cols-12 gap-6">
+      <div className="col-span-8 bg-[#12121a] rounded-2xl p-4 border border-green-500/30">
+        <canvas ref={canvasRef} width={800} height={300} className="w-full rounded-xl" />
+      </div>
+      <div className="col-span-4 space-y-4">
+        <div className="bg-[#12121a] rounded-xl p-4 border border-green-500/30">
+          <label className="text-sm text-gray-400 flex items-center gap-2 mb-3"><Bolt className="w-4 h-4" /> Taalas Chip</label>
+          <select value={chipKey} onChange={(e) => setChipKey(e.target.value)} className="w-full bg-[#1a1a2e] border border-green-500/30 rounded-lg px-3 py-2 text-sm">
+            {Object.entries(TAALAS_CHIPS).map(([k, v]) => <option key={k} value={k}>{v.name} - {v.model}</option>)}
+          </select>
+        </div>
+        <div className="bg-[#12121a] rounded-xl p-4 border border-green-500/30">
+          <div className="text-gray-400 text-xs mb-1">Model</div>
+          <div className="text-xl font-bold text-white">{chip.model}</div>
+        </div>
+        <div className="bg-[#12121a] rounded-xl p-4 border border-green-500/30">
+          <div className="text-gray-400 text-xs mb-1">Performance</div>
+          <div className="text-3xl font-bold text-green-400">{chip.tokensPerSec.toLocaleString()} <span className="text-sm font-normal">tok/s</span></div>
+          <div className="text-xs text-gray-500 mt-1">10x faster than H200</div>
+        </div>
+        <div className="bg-[#12121a] rounded-xl p-4 border border-green-500/30">
+          <div className="text-gray-400 text-xs mb-1">Power</div>
+          <div className="text-xl font-bold text-white">{chip.power}</div>
+          <div className="text-xs text-gray-500 mt-1">10x less than GPU servers</div>
+        </div>
+        <div className="bg-[#12121a] rounded-xl p-4 border border-green-500/30">
+          <div className="text-gray-400 text-xs mb-1">VRAM</div>
+          <div className="text-xl font-bold text-white">On-chip only</div>
+          <div className="text-xs text-gray-500 mt-1">No HBM needed</div>
+        </div>
+        <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/30 text-center">
+          <div className="text-green-400 font-bold text-sm">Hard-wired Model</div>
+          <div className="text-gray-400 text-xs mt-1">Custom silicon for each model</div>
         </div>
       </div>
     </div>
