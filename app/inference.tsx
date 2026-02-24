@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import Link from 'next/link';
 import {
   Play,
   Square,
@@ -23,7 +22,6 @@ import {
   ChevronDown,
   CheckCircle2,
   Clock,
-  Brain,
 } from 'lucide-react';
 
 const GPUS = {
@@ -140,22 +138,22 @@ const App = () => {
   const [memoryUsed, setMemoryUsed] = useState(0);
   const [speed, setSpeed] = useState(1.5);
   const [precision, setPrecision] = useState(8);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState([]);
   const [generatedWords, setGeneratedWords] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [measuredTPS, setMeasuredTPS] = useState(0);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const requestRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
+  const canvasRef = useRef(null);
+  const scrollRef = useRef(null);
+  const requestRef = useRef();
+  const startTimeRef = useRef(null);
 
   // Real-time measurement refs
-  const lastTokenArrivedRef = useRef<number | null>(null);
-  const tpsHistoryRef = useRef<number[]>([]);
+  const lastTokenArrivedRef = useRef(null);
+  const tpsHistoryRef = useRef([]);
 
-  const currentModel = (MODELS_2026 as any)[modelKey];
-  const currentGpu = (GPUS as any)[gpuKey];
+  const currentModel = MODELS_2026[modelKey];
+  const currentGpu = GPUS[gpuKey];
 
   // --- Constants ---
   const VRAM_CAPACITY = currentGpu.vram;
@@ -247,7 +245,7 @@ const App = () => {
 
   const busLinesY = Array.from({ length: 8 }, (_, i) => 80 + i * 20);
 
-  const addLog = (msg: string) => {
+  const addLog = (msg) => {
     setLog((prev) => [msg, ...prev].slice(0, 10));
   };
 
@@ -607,21 +605,6 @@ const App = () => {
                 <Network size={10} /> {currentGpu.bandwidth} GB/S
               </span>
             </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Link
-              href="/"
-              className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/30 transition"
-            >
-              Inference
-            </Link>
-            <Link
-              href="/training"
-              className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/30 transition"
-            >
-              Training
-            </Link>
           </div>
         </div>
         <div className="flex gap-8 shrink-0">
