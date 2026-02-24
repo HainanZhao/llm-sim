@@ -8,9 +8,10 @@ import dynamic from 'next/dynamic';
 const InferenceSimulator = dynamic(() => import('./inference'), { ssr: false });
 const TrainingSimulator = dynamic(() => import('./training'), { ssr: false });
 const TaalasSimulator = dynamic(() => import('./taalas'), { ssr: false });
+const TpuSimulator = dynamic(() => import('./tpu'), { ssr: false });
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'inference' | 'training' | 'taalas'>('inference');
+  const [activeTab, setActiveTab] = useState<'inference' | 'training' | 'taalas' | 'tpu'>('inference');
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 font-sans">
@@ -45,6 +46,12 @@ export default function App() {
             >
               <span className="flex items-center gap-2"><Zap size={14} /> Taalas</span>
             </button>
+            <button 
+              onClick={() => setActiveTab('tpu')} 
+              className={`px-4 py-2 text-xs font-bold uppercase rounded transition-all ${activeTab === 'tpu' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            >
+              <span className="flex items-center gap-2"><Zap size={14} /> TPU</span>
+            </button>
           </div>
         </div>
       </div>
@@ -54,6 +61,7 @@ export default function App() {
         {activeTab === 'inference' && <InferenceSimulator />}
         {activeTab === 'training' && <TrainingSimulator />}
         {activeTab === 'taalas' && <TaalasSimulator />}
+        {activeTab === 'tpu' && <TpuSimulator />}
       </div>
     </div>
   );
